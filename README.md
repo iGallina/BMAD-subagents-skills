@@ -1,84 +1,126 @@
 # BMAD Team-Aware & Skill-Aware Agents
 
-An overlay for the BMAD Method plugin that makes agents aware of available subagents and skills when working on projects.
+> An overlay for [BMAD Method](https://github.com/bmad-code-org/BMAD-METHOD) that makes agents aware of available [subagents](https://github.com/VoltAgent/awesome-claude-code-subagents) and [skills](https://github.com/VoltAgent/awesome-agent-skills) when working on projects.
 
-## What It Does
+## The Problem
 
-When BMAD spawns an agent (Dev, QA, Architect, etc.), it now knows which Claude Code subagents and skills are appropriate for the project's tech stack.
+When BMAD spawns an agent to execute a workflow (Dev implementing a story, QA writing tests, Architect designing systems), **the agent has no idea what specialized subagents or skills are available**. A Dev agent working on a FastAPI + React project doesn't know it can delegate to `python-pro` for backend work or `react-specialist` for frontend components.
 
-- **`AGENTS.md`** — Auto-generated file at project root with recommended subagents + skills
-- **Prompt injection** — Spawned agents receive filtered team recommendations in their context
-- **Dynamic updates** — AGENTS.md regenerates after architecture/PRD workflows complete
-- **Tech detection** — Scans `package.json`, `requirements.txt`, `pyproject.toml`, `Cargo.toml`, `go.mod`, `Dockerfile`, architecture docs, etc.
+Meanwhile, there are **131 specialized subagents** across 10 categories available — but agents can't use what they don't know about.
+
+## The Solution
+
+This overlay adds **team awareness** to the BMAD workflow:
+
+1. **Scans your project** — detects technologies from `package.json`, `requirements.txt`, `pyproject.toml`, `Cargo.toml`, `Dockerfile`, architecture docs, etc.
+2. **Maps tech to subagents** — ~50 technology keywords mapped to the right specialists
+3. **Generates `AGENTS.md`** — a project-level file with recommended subagents + skills
+4. **Injects into agent prompts** — when BMAD spawns a Dev/QA/Architect agent, they receive filtered recommendations based on their role
+
+### Example: SmartAutomacao project (Python/FastAPI/Supabase/Docker)
+
+```markdown
+# Project Team — SmartAutomacao
+
+## Tech Stack
+| Layer | Technologies |
+|-------|-------------|
+| Language | Python |
+| Backend | Python, FastAPI, SQLAlchemy, Supabase |
+| Database | PostgreSQL |
+| Infra | Docker |
+
+## Recommended Subagents
+
+### Implementation
+| Subagent | Why |
+|----------|-----|
+| python-pro | python |
+| postgres-pro | postgresql |
+| backend-developer | fastapi |
+| docker-expert | docker |
+
+### Architecture & Planning
+| Subagent | Why |
+|----------|-----|
+| api-designer | fastapi |
+```
+
+---
 
 ## Installation
 
 ### Prerequisites
 
-- BMAD Method installed (standard installation)
-- Claude Code with bmad-skills plugin
-- Subagents from [awesome-claude-code-subagents](https://github.com/VoltAgent/awesome-claude-code-subagents) in `~/.openclaw/workspace/bmad/core/claude-subagents/`
+- [BMAD Method](https://github.com/bmad-code-org/BMAD-METHOD) v6.2+ installed (`npx bmad-method install`)
+- [Claude Code](https://docs.anthropic.com/en/docs/claude-code)
+- Subagents from [awesome-claude-code-subagents](https://github.com/VoltAgent/awesome-claude-code-subagents) (optional but recommended for full matching)
 
-### Quick Install
+### Install to a project
 
 ```bash
-git clone <this-repo> ~/.openclaw/workspace/projects/bmad-team-skills
-cd ~/.openclaw/workspace/projects/bmad-team-skills
-./scripts/install.sh
+# Clone this repo
+git clone https://github.com/iGallina/BMAD-subagents-skills.git
+
+# Install skill to your project
+cd BMAD-subagents-skills
+./scripts/install.sh /path/to/your/project
 ```
 
-### What install.sh Does
+This installs the `generate-team` skill into your project's `.claude/skills/` alongside your existing BMAD skills.
 
-1. Copies new files into the BMAD OpenClaw plugin:
-   - `src/lib/team-resolver.ts` — Tech stack detection + subagent matching
-   - `src/tools/bmad-generate-team.ts` — MCP tool for AGENTS.md generation
-2. Patches existing plugin files:
-   - `src/index.ts` — Registers `bmad_generate_team` tool
-   - `src/tools/bmad-start-workflow.ts` — Injects team section into agent prompts
-   - `src/tools/bmad-init-project.ts` — Generates initial AGENTS.md
-   - `src/tools/bmad-complete-workflow.ts` — Auto-regenerates after architecture workflows
-   - `src/lib/orchestrator-rules.ts` — Adds team awareness rules
-   - `src/tools/bmad-load-step.ts` — Fixes missing import (pre-existing bug)
-3. Installs the `generate-team` skill globally (`~/.claude/skills/generate-team/`)
-4. Runs TypeScript typecheck to verify
+### Install globally (all projects)
+
+```bash
+./scripts/install.sh global
+```
+
+Installs to `~/.claude/skills/generate-team/` — available in every Claude Code session.
+
+### For OpenClaw users (optional)
+
+If you use the OpenClaw MCP plugin, add `--plugin` to also patch the plugin for automatic prompt injection:
+
+```bash
+./scripts/install.sh /path/to/your/project --plugin
+```
+
+This enables:
+- `bmad_generate_team` MCP tool
+- Auto-injection of team recommendations into spawned agent prompts
+- Auto-regeneration of AGENTS.md after architecture/PRD workflows
+
+---
 
 ## Usage
 
-### For new projects (greenfield)
-
-```bash
-# In Claude Code session:
-# 1. Initialize BMAD project normally
-#    bmad_init_project → AGENTS.md is auto-generated
-# 2. Continue with workflows — agents are now team-aware
-```
-
 ### For existing projects (brownfield)
 
-```bash
-# In Claude Code session:
-/generate-team
-# Or just ask: "generate AGENTS.md for this project"
-```
+Open Claude Code in your project and run:
 
-### Adding /generate-team command to a project
-
-```bash
-mkdir -p .claude/commands
-cat > .claude/commands/generate-team.md << 'EOF'
----
-description: "Generate or update AGENTS.md with recommended subagents and skills"
----
-Run the `generate-team` skill to analyze this project and generate/update AGENTS.md.
-EOF
-```
-
-### Manual regeneration
-
-After significant stack changes (e.g., SQLite → Supabase):
 ```
 /generate-team
 ```
+
+Or just ask: *"generate the AGENTS.md for this project"*
+
+Claude will scan your project files, detect the tech stack, and create `AGENTS.md` at the project root.
+
+### For new projects (greenfield)
+
+If using the OpenClaw plugin (`--plugin`), `bmad_init_project` auto-generates AGENTS.md. Otherwise, run `/generate-team` after initial setup.
+
+### Updating after stack changes
+
+When your tech stack changes (e.g., SQLite → Supabase, adding Redis, switching to React):
+
+```
+/generate-team
+```
+
+The skill re-scans everything and regenerates AGENTS.md with updated recommendations.
+
+---
 
 ## How It Works
 
@@ -86,21 +128,41 @@ After significant stack changes (e.g., SQLite → Supabase):
 
 Scans project files in order of priority:
 
-1. `_bmad-output/planning-artifacts/architecture.md` — Structured table data only (no prose matching)
-2. `package.json` — npm dependencies
-3. `pyproject.toml` / `requirements.txt` — Python packages
-4. `Cargo.toml`, `go.mod`, `Gemfile` — Language-specific configs
-5. File/directory presence — `Dockerfile`, `supabase/`, `.github/workflows/`, `playwright.config.*`
+| Source | What it detects |
+|--------|----------------|
+| `_bmad-output/planning-artifacts/architecture.md` | Structured table data from architecture decisions |
+| `package.json` | React, Vue, Next.js, Express, TypeScript, Playwright, etc. |
+| `pyproject.toml` / `requirements.txt` | Python, FastAPI, Django, pytest, Supabase, etc. |
+| `Cargo.toml` | Rust |
+| `go.mod` | Go |
+| `Gemfile` | Ruby/Rails |
+| File/dir presence | Docker, Supabase, GitHub Actions, Playwright, Terraform |
+
+Architecture docs are parsed for **structured tables only** — prose mentions like "we considered React but chose Vue" don't produce false positives.
 
 ### Subagent Matching
 
-Maps ~50 technology keywords to 131 subagents across 10 categories. Results are classified into:
+Maps detected technologies to subagents across 10 categories:
 
-- **Implementation** — Language specialists, core dev, infrastructure
-- **Quality & Review** — Testing, security, code review
+| Category | Examples |
+|----------|----------|
+| 01-core-development | backend-developer, frontend-developer, api-designer |
+| 02-language-specialists | python-pro, typescript-pro, rust-engineer, golang-pro |
+| 03-infrastructure | docker-expert, kubernetes-specialist, terraform-engineer |
+| 04-quality-security | test-automator, code-reviewer, qa-expert |
+| 05-data-ai | postgres-pro, ai-engineer, llm-architect |
+| 06-developer-experience | refactoring-specialist, mcp-developer |
+| 07-specialized-domains | fintech-engineer, game-developer |
+| 08-business-product | product-manager, technical-writer |
+| 09-meta-orchestration | multi-agent-coordinator, workflow-orchestrator |
+| 10-research-analysis | market-researcher, competitive-analyst |
+
+Results are classified into groups for role-based filtering:
+- **Implementation** — language specialists, core dev, infrastructure
+- **Quality & Review** — testing, security, code review
 - **Architecture & Planning** — API design, DB optimization
 
-### Prompt Injection
+### Prompt Injection (OpenClaw plugin mode)
 
 When `bmad_start_workflow` spawns an agent, it reads `AGENTS.md` and injects a **filtered excerpt** based on the agent's role:
 
@@ -111,7 +173,9 @@ When `bmad_start_workflow` spawns an agent, it reads `AGENTS.md` and injects a *
 | Architect (Winston) | Architecture + Implementation |
 | SM (Bob) in impl phase | Implementation |
 
-### Auto-Regeneration
+This keeps prompts focused — a Dev agent doesn't see architecture recommendations, and an Architect doesn't see testing tools.
+
+### Auto-Regeneration (OpenClaw plugin mode)
 
 AGENTS.md is automatically regenerated after these workflows complete:
 - `create-architecture`
@@ -120,36 +184,48 @@ AGENTS.md is automatically regenerated after these workflows complete:
 - `technical-research`
 - `document-project`
 
-## Files
+---
+
+## Project Structure
 
 ```
-bmad-team-skills/
+BMAD-subagents-skills/
 ├── plugin/
-│   ├── new/                    # New files to add
-│   │   ├── src/lib/team-resolver.ts
-│   │   └── src/tools/bmad-generate-team.ts
-│   └── patches/                # Diffs for existing files
-│       ├── index.ts.patch
-│       ├── bmad-start-workflow.ts.patch
-│       ├── bmad-init-project.ts.patch
-│       ├── bmad-complete-workflow.ts.patch
-│       ├── orchestrator-rules.ts.patch
-│       └── bmad-load-step.ts.patch
+│   ├── new/src/                     # All source files (new + modified)
+│   │   ├── lib/team-resolver.ts     # Core: tech detection + subagent matching
+│   │   ├── tools/bmad-generate-team.ts  # MCP tool wrapper
+│   │   ├── tools/bmad-start-workflow.ts # Modified: team section injection
+│   │   ├── tools/bmad-init-project.ts   # Modified: initial AGENTS.md generation
+│   │   ├── tools/bmad-complete-workflow.ts # Modified: auto-regeneration
+│   │   ├── lib/orchestrator-rules.ts    # Modified: team awareness rules
+│   │   ├── index.ts                     # Modified: registers new tool
+│   │   └── __tests__/team-resolver.test.ts  # 36 tests
+│   └── patches/                     # Diffs for patching existing installs
 ├── skill/
-│   ├── SKILL.md                # generate-team skill
+│   ├── SKILL.md                     # generate-team Claude Code skill
 │   └── references/
-│       └── subagent-catalog.md
+│       └── subagent-catalog.md      # Full catalog of 131 subagents
 ├── scripts/
-│   ├── install.sh              # One-step installer
-│   └── uninstall.sh            # Revert changes
-├── tests/
-│   └── team-resolver.test.ts   # 36 tests
+│   ├── install.sh                   # Installer (skill-only or skill+plugin)
+│   └── uninstall.sh                 # Revert plugin changes
 └── README.md
 ```
 
 ## Compatibility
 
-- BMAD Method v6.0+
-- OpenClaw plugin v0.1.0+
-- Claude Code with bmad-skills plugin
-- Node.js 20+ / Bun
+| Component | Version |
+|-----------|---------|
+| BMAD Method | v6.2+ |
+| Claude Code | Latest |
+| OpenClaw plugin (optional) | v0.1.0+ |
+| Node.js / Bun | 20+ |
+
+## Related Projects
+
+- [BMAD-METHOD](https://github.com/bmad-code-org/BMAD-METHOD) — The core BMAD framework
+- [awesome-claude-code-subagents](https://github.com/VoltAgent/awesome-claude-code-subagents) — 131 specialized subagents
+- [awesome-agent-skills](https://github.com/VoltAgent/awesome-agent-skills) — Reusable agent skills
+
+## License
+
+MIT
