@@ -1,0 +1,47 @@
+--- /Users/iangallina/.openclaw/workspace/bmad/sources/openclaw-bmad/src/tools/bmad-init-project.ts	2026-03-10 11:48:07
++++ /Users/iangallina/.openclaw/workspace/bmad/openclaw/src/tools/bmad-init-project.ts	2026-03-24 17:24:35
+@@ -7,6 +7,7 @@
+ import { mkdir, access, symlink, readFile, writeFile, lstat } from "node:fs/promises";
+ import { join } from "node:path";
+ import { createInitialState, writeState, readState, bmadDir } from "../lib/state.ts";
++import { generateTeamFile } from "../lib/team-resolver.ts";
+ import type { ToolResult } from "../types.ts";
+ 
+ export const name = "bmad_init_project";
+@@ -95,6 +96,23 @@
+   await mkdir(implDir, { recursive: true });
+   await mkdir(docsDir, { recursive: true });
+ 
++  // Generate initial AGENTS.md from filesystem scan (useful for existing projects)
++  let teamGenerated = false;
++  try {
++    const { content } = await generateTeamFile(
++      projectPath,
++      context.bmadMethodPath,
++      projectName
++    );
++    // Only write if we detected any technologies
++    if (content.includes("| ")) {
++      await writeFile(join(projectPath, "AGENTS.md"), content, "utf-8");
++      teamGenerated = true;
++    }
++  } catch {
++    // Non-critical — AGENTS.md can be generated later
++  }
++
+   return text(
+     `✅ BMad project "${projectName}" initialized.\n\n` +
+       `**Created:**\n` +
+@@ -105,8 +123,10 @@
+       `- \`_bmad-output/planning-artifacts/\` — briefs, PRDs, architecture docs\n` +
+       `- \`_bmad-output/implementation-artifacts/\` — sprint status, stories, reviews\n` +
+       `- \`docs/\` — project knowledge\n\n` +
+-      `All \`{project-root}/_bmad/...\` paths in BMad step files will resolve correctly.\n\n` +
+-      `**Next step:** Run \`bmad_list_workflows\` to see available workflows, or start with "Create Product Brief".`
++      (teamGenerated ? `- \`AGENTS.md\` — recommended subagents and skills for this project\n` : "") +
++      `\nAll \`{project-root}/_bmad/...\` paths in BMad step files will resolve correctly.\n\n` +
++      `**Next step:** Run \`bmad_list_workflows\` to see available workflows, or start with "Create Product Brief".` +
++      (!teamGenerated ? `\n\n💡 Run \`bmad_generate_team\` later to generate AGENTS.md with recommended subagents.` : "")
+   );
+ }
+ 

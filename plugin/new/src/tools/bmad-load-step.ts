@@ -1,0 +1,216 @@
+/**
+ * bmad_load_step — Load the next step in the active workflow.
+ * Resolves the next step file path from the current step's frontmatter.
+ * The master should call this after completing each step.
+ */
+
+import { Type } from "@sinclair/typebox";
+import { readState, writeState } from "../lib/state.ts";
+import { getWorkflow } from "../lib/workflow-registry.ts";
+import { loadStepFile, listStepFiles, resolveStepPath } from "../lib/step-loader.ts";
+import { join, dirname } from "node:path";
+import type { ToolResult } from "../types.ts";
+
+export const name = "bmad_load_step";
+export const description =
+  "Load the next step in the active BMad workflow. Call this after completing the current step.";
+
+export const parameters = Type.Object({
+  projectPath: Type.String({
+    description: "Absolute path to the project root directory",
+  }),
+  step: Type.Optional(
+    Type.Number({
+      description:
+        "Specific step number to load (optional — defaults to next step)",
+    })
+  ),
+});
+
+export async function execute(
+  _id: string,
+  params: { projectPath: string; step?: number },
+  context: { bmadMethodPath: string }
+): Promise<ToolResult> {
+  const { projectPath } = params;
+
+  const state = await readState(projectPath);
+  if (!state) {
+    return text("Error: Project not initialized.");
+  }
+  if (!state.activeWorkflow) {
+    return text("Error: No active workflow. Start one with `bmad_start_workflow`.");
+  }
+
+  const active = state.activeWorkflow;
+
+  // If a specific step number was requested, find it by number
+  if (params.step != null) {
+    const workflowDef = getWorkflow(active.id);
+    if (!workflowDef?.stepsDir) {
+      return text(
+        `Error: Cannot jump to step ${params.step} — workflow "${active.id}" does not use numbered step files.`
+      );
+    }
+    const stepsDir = join(context.bmadMethodPath, workflowDef.stepsDir);
+    const allSteps = await listStepFiles(stepsDir);
+    // Find the step file matching the requested number
+    const targetFile = allSteps.find((f) => {
+      const match = f.match(/^step-(?:[a-z]+-)?(\d+)/);
+      return match && parseInt(match[1], 10) === params.step;
+    });
+    if (!targetFile) {
+      return text(
+        `Error: Step ${params.step} not found in workflow "${active.id}". ` +
+          `Available steps: ${allSteps.map((f) => f.match(/^step-(?:[a-z]+-)?(\d+)/)?.[1]).filter(Boolean).join(", ")}`
+      );
+    }
+    const targetPath = join(stepsDir, targetFile);
+    const stepData = await loadStepFile(targetPath);
+
+    // Resolve variables
+    const vars: Record<string, string> = {
+      "project-root": projectPath,
+      project_name: state.projectName,
+      user_name: "User",
+      communication_language: "english",
+      document_output_language: "english",
+      user_skill_level: "expert",
+      output_folder: "_bmad-output",
+      planning_artifacts: join(projectPath, "_bmad-output/planning-artifacts"),
+      implementation_artifacts: join(projectPath, "_bmad-output/implementation-artifacts"),
+      product_knowledge: join(projectPath, "docs"),
+    };
+
+    let resolvedContent = stepData.content;
+    for (const [key, value] of Object.entries(vars)) {
+      resolvedContent = resolvedContent.replaceAll(`{{${key}}}`, value);
+      resolvedContent = resolvedContent.replaceAll(`{${key}}`, value);
+    }
+
+    // Update state
+    active.currentStep = stepData.stepNumber;
+    active.currentStepFile = targetPath;
+    if (stepData.outputFile) {
+      active.outputFile = resolveStepPath(stepData.outputFile, vars);
+    }
+    await writeState(projectPath, state);
+
+    const stepLabel = active.totalSteps
+      ? `${stepData.stepNumber} of ${active.totalSteps}`
+      : `${stepData.stepNumber}`;
+
+    return text(
+      [
+        `## Step ${stepLabel}: ${stepData.name || stepData.description}`,
+        "",
+        resolvedContent,
+        "",
+        "---",
+        "",
+        stepData.nextStepFile
+          ? `**When complete:** Call \`bmad_save_artifact\` to save this step's output, then \`bmad_load_step\` for the next step.`
+          : `**This is the final step.** Call \`bmad_save_artifact\` to save output, then \`bmad_complete_workflow\` to finalize.`,
+      ].join("\n")
+    );
+  }
+
+  // Load current step to find the next step path
+  const currentStep = await loadStepFile(active.currentStepFile);
+
+  // Bug B fix: auto-discover next step if frontmatter has no nextStepFile
+  let nextStepFileValue = currentStep.nextStepFile;
+  if (!nextStepFileValue) {
+    const currentDir = dirname(active.currentStepFile);
+    const allSteps = await listStepFiles(currentDir);
+    const currentBasename = active.currentStepFile.split("/").pop() ?? "";
+    const currentIdx = allSteps.indexOf(currentBasename);
+    if (currentIdx >= 0 && currentIdx < allSteps.length - 1) {
+      nextStepFileValue = "./" + allSteps[currentIdx + 1];
+    }
+  }
+
+  if (!nextStepFileValue) {
+    return text(
+      `This is the final step of the "${active.id}" workflow.\n` +
+        `Call \`bmad_complete_workflow\` to finalize.`
+    );
+  }
+
+  // Resolve the next step path
+  const vars: Record<string, string> = {
+    "project-root": projectPath,
+    project_name: state.projectName,
+    user_name: "User",
+    communication_language: "english",
+    document_output_language: "english",
+    user_skill_level: "expert",
+    output_folder: "_bmad-output",
+    planning_artifacts: join(projectPath, "_bmad-output/planning-artifacts"),
+    implementation_artifacts: join(projectPath, "_bmad-output/implementation-artifacts"),
+    product_knowledge: join(projectPath, "docs"),
+  };
+
+  let nextStepPath = resolveStepPath(nextStepFileValue, vars);
+
+  // Bug A fix: resolve relative paths against current step's directory,
+  // not bmadMethodPath. Only fall back to bmadMethodPath for paths that
+  // look like bmm/ or core/ prefixed method-relative paths.
+  if (!nextStepPath.startsWith("/")) {
+    if (nextStepPath.startsWith("./") || nextStepPath.startsWith("../")) {
+      nextStepPath = join(dirname(active.currentStepFile), nextStepPath);
+    } else if (nextStepPath.startsWith("bmm/") || nextStepPath.startsWith("core/")) {
+      nextStepPath = join(context.bmadMethodPath, nextStepPath);
+    } else {
+      // Default: resolve relative to current step directory
+      nextStepPath = join(dirname(active.currentStepFile), nextStepPath);
+    }
+  }
+
+  // Load the next step
+  let nextStep;
+  try {
+    nextStep = await loadStepFile(nextStepPath);
+  } catch (err) {
+    return text(
+      `Error loading next step file: ${nextStepPath}\n${err instanceof Error ? err.message : String(err)}`
+    );
+  }
+
+  // Resolve variables in step content (handle both {var} and {{var}} patterns)
+  let resolvedContent = nextStep.content;
+  for (const [key, value] of Object.entries(vars)) {
+    resolvedContent = resolvedContent.replaceAll(`{{${key}}}`, value);
+    resolvedContent = resolvedContent.replaceAll(`{${key}}`, value);
+  }
+
+  // Update state
+  active.currentStep = nextStep.stepNumber;
+  active.currentStepFile = nextStepPath;
+  if (nextStep.outputFile) {
+    active.outputFile = resolveStepPath(nextStep.outputFile, vars);
+  }
+  await writeState(projectPath, state);
+
+  const stepLabel = active.totalSteps
+    ? `${nextStep.stepNumber} of ${active.totalSteps}`
+    : `${nextStep.stepNumber}`;
+
+  const output = [
+    `## Step ${stepLabel}: ${nextStep.name || nextStep.description}`,
+    "",
+    resolvedContent,
+    "",
+    "---",
+    "",
+    nextStep.nextStepFile
+      ? `**When complete:** Call \`bmad_save_artifact\` to save this step's output, then \`bmad_load_step\` for the next step.`
+      : `**This is the final step.** Call \`bmad_save_artifact\` to save output, then \`bmad_complete_workflow\` to finalize.`,
+  ];
+
+  return text(output.join("\n"));
+}
+
+function text(t: string): ToolResult {
+  return { content: [{ type: "text", text: t }] };
+}

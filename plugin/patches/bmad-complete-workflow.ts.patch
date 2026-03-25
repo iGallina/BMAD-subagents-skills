@@ -1,0 +1,66 @@
+--- /Users/iangallina/.openclaw/workspace/bmad/sources/openclaw-bmad/src/tools/bmad-complete-workflow.ts	2026-03-10 11:48:07
++++ /Users/iangallina/.openclaw/workspace/bmad/openclaw/src/tools/bmad-complete-workflow.ts	2026-03-24 17:25:09
+@@ -4,8 +4,11 @@
+  */
+ 
+ import { Type } from "@sinclair/typebox";
++import { writeFile } from "node:fs/promises";
++import { join } from "node:path";
+ import { readState, writeState } from "../lib/state.ts";
+ import { getAvailableWorkflows, getWorkflow } from "../lib/workflow-registry.ts";
++import { generateTeamFile } from "../lib/team-resolver.ts";
+ import type { BmadPhase, ToolResult } from "../types.ts";
+ 
+ export const name = "bmad_complete_workflow";
+@@ -26,9 +29,19 @@
+   "implementation",
+ ];
+ 
++/** Workflows that produce architecture/requirements artifacts worth regenerating AGENTS.md for */
++const TEAM_TRIGGER_WORKFLOWS = [
++  "create-architecture",
++  "create-prd",
++  "correct-course",
++  "technical-research",
++  "document-project",
++];
++
+ export async function execute(
+   _id: string,
+-  params: { projectPath: string }
++  params: { projectPath: string },
++  context: { bmadMethodPath: string }
+ ): Promise<ToolResult> {
+   const state = await readState(params.projectPath);
+   if (!state) {
+@@ -72,6 +85,22 @@
+ 
+   await writeState(params.projectPath, state);
+ 
++  // Auto-regenerate AGENTS.md after architecture/PRD workflows
++  let teamUpdated = false;
++  if (TEAM_TRIGGER_WORKFLOWS.includes(active.id)) {
++    try {
++      const { content } = await generateTeamFile(
++        params.projectPath,
++        context.bmadMethodPath,
++        state.projectName
++      );
++      await writeFile(join(params.projectPath, "AGENTS.md"), content, "utf-8");
++      teamUpdated = true;
++    } catch {
++      // Non-critical
++    }
++  }
++
+   // Suggest next workflows
+   const completedIds = state.completedWorkflows.map((w) => w.id);
+   const available = getAvailableWorkflows(completedIds).filter(
+@@ -84,6 +113,7 @@
+     `**Agent:** ${active.agentName} (${active.agentId})`,
+     `**Output:** ${active.outputFile || "none"}`,
+     `**Duration:** started ${active.startedAt}`,
++    teamUpdated ? `**AGENTS.md:** updated with latest tech stack analysis` : "",
+     "",
+   ];
+ 

@@ -1,0 +1,14 @@
+--- /Users/iangallina/.openclaw/workspace/bmad/sources/openclaw-bmad/src/lib/orchestrator-rules.ts	2026-03-10 11:48:07
++++ /Users/iangallina/.openclaw/workspace/bmad/openclaw/src/lib/orchestrator-rules.ts	2026-03-24 17:24:06
+@@ -30,6 +30,11 @@
+ - 🚫 **NEVER** skip steps or optimize the sequence
+ - 🎯 **ALWAYS** follow the exact instructions in the step content
+ - 📋 **NEVER** create mental todo lists from future steps
++
++### Team & Subagent Awareness
++- When AGENTS.md lists recommended subagents for your role, prefer spawning those for specialized tasks
++- When AGENTS.md lists available skills, invoke them when the task matches
++- If no AGENTS.md exists, proceed normally without subagent delegation
+ `;
+ 
+ export const YOLO_MODE_RULES = `### YOLO Mode Active

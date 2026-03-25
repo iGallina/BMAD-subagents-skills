@@ -1,0 +1,10 @@
+--- /Users/iangallina/.openclaw/workspace/bmad/sources/openclaw-bmad/src/tools/bmad-load-step.ts	2026-03-10 11:48:07
++++ /Users/iangallina/.openclaw/workspace/bmad/openclaw/src/tools/bmad-load-step.ts	2026-03-24 17:32:41
+@@ -6,6 +6,7 @@
+ 
+ import { Type } from "@sinclair/typebox";
+ import { readState, writeState } from "../lib/state.ts";
++import { getWorkflow } from "../lib/workflow-registry.ts";
+ import { loadStepFile, listStepFiles, resolveStepPath } from "../lib/step-loader.ts";
+ import { join, dirname } from "node:path";
+ import type { ToolResult } from "../types.ts";

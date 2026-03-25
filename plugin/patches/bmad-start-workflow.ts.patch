@@ -1,0 +1,64 @@
+--- /Users/iangallina/.openclaw/workspace/bmad/sources/openclaw-bmad/src/tools/bmad-start-workflow.ts	2026-03-10 11:48:07
++++ /Users/iangallina/.openclaw/workspace/bmad/openclaw/src/tools/bmad-start-workflow.ts	2026-03-24 17:25:33
+@@ -17,6 +17,7 @@
+ } from "../lib/orchestrator-rules.ts";
+ import { join } from "node:path";
+ import { readFile, access } from "node:fs/promises";
++import { filterTeamForRole } from "../lib/team-resolver.ts";
+ import type { ToolResult } from "../types.ts";
+ 
+ export const name = "bmad_start_workflow";
+@@ -177,6 +178,9 @@
+ 5. When feedback arrives, incorporate it and continue to the next step via \`bmad_load_step\`
+ ` : "";
+ 
++  // Load team context from AGENTS.md if available
++  const teamSection = await loadTeamSection(projectPath, workflowDef.agentId, workflowDef.phase);
++
+   const output = [
+     `# BMad Workflow Agent: ${persona.name}`,
+     "",
+@@ -200,6 +204,7 @@
+     "",
+     "---",
+     "",
++    teamSection,
+     `## Step 1 — Execute Now`,
+     "",
+     resolvedContent,
+@@ -214,6 +219,35 @@
+   return text(output.join("\n"));
+ }
+ 
++/**
++ * Load filtered team section from AGENTS.md for the spawned agent prompt.
++ */
++async function loadTeamSection(
++  projectPath: string,
++  agentId: string,
++  phase: string
++): Promise<string> {
++  try {
++    const agentsMd = await readFile(join(projectPath, "AGENTS.md"), "utf-8");
++    const filtered = filterTeamForRole(agentsMd, agentId, phase);
++    if (!filtered.trim()) return "";
++    return [
++      `## Project Team & Available Subagents`,
++      "",
++      filtered,
++      "",
++      `**Subagents:** When a task requires specialized expertise listed above, spawn the recommended subagent by name.`,
++      `**Skills:** When a workflow matches an available skill, invoke it with /skill-name.`,
++      "",
++      "---",
++      "",
++    ].join("\n");
++  } catch {
++    // AGENTS.md not generated yet — skip
++    return "";
++  }
++}
++
+ function text(t: string): ToolResult {
+   return { content: [{ type: "text", text: t }] };
+ }
