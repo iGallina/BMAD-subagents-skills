@@ -42,13 +42,13 @@ echo ""
 # ── Step 1: Install skill ─────────────────────────────────────────────────
 
 if [ "$TARGET_PROJECT" = "global" ]; then
-  # Global install: ~/.claude/skills/
   SKILL_DIR="$HOME/.claude/skills/generate-team"
-  echo "[1/3] Installing generate-team skill globally..."
+  AGENTS_DEST="$HOME/.claude/agents"
+  echo "[1/4] Installing generate-team skill globally..."
 else
-  # Project install: {project}/.claude/skills/
   SKILL_DIR="$TARGET_PROJECT/.claude/skills/generate-team"
-  echo "[1/3] Installing generate-team skill to project..."
+  AGENTS_DEST="$TARGET_PROJECT/.claude/agents"
+  echo "[1/4] Installing generate-team skill to project..."
 fi
 
 mkdir -p "$SKILL_DIR/references"
@@ -56,10 +56,28 @@ cp "$PROJECT_DIR/skill/SKILL.md" "$SKILL_DIR/"
 cp "$PROJECT_DIR/skill/references/subagent-catalog.md" "$SKILL_DIR/references/"
 echo "  Installed at: $SKILL_DIR"
 
-# ── Step 2: Generate initial AGENTS.md ─────────────────────────────────────
+# ── Step 2: Install subagents ──────────────────────────────────────────────
+
+BUNDLED_AGENTS="$PROJECT_DIR/agents"
+
+if [ -d "$BUNDLED_AGENTS" ] && [ "$(ls -A "$BUNDLED_AGENTS"/*.md 2>/dev/null)" ]; then
+  echo "[2/4] Installing subagents..."
+  mkdir -p "$AGENTS_DEST"
+  AGENT_COUNT=0
+  for agent_file in "$BUNDLED_AGENTS"/*.md; do
+    cp "$agent_file" "$AGENTS_DEST/"
+    AGENT_COUNT=$((AGENT_COUNT + 1))
+  done
+  echo "  Installed $AGENT_COUNT subagents to: $AGENTS_DEST"
+else
+  echo "[2/4] WARNING: No bundled agents found at $BUNDLED_AGENTS"
+  echo "  Run scripts/fetch-agents.sh first to download subagent definitions"
+fi
+
+# ── Step 3: Generate initial AGENTS.md ─────────────────────────────────────
 
 if [ "$TARGET_PROJECT" != "global" ] && [ -d "$TARGET_PROJECT" ]; then
-  echo "[2/3] Checking for initial AGENTS.md generation..."
+  echo "[3/4] Checking for initial AGENTS.md generation..."
 
   if [ -f "$TARGET_PROJECT/AGENTS.md" ]; then
     echo "  AGENTS.md already exists — skipping (use /generate-team to update)"
@@ -68,19 +86,19 @@ if [ "$TARGET_PROJECT" != "global" ] && [ -d "$TARGET_PROJECT" ]; then
     echo "  Or ask Claude: 'generate the AGENTS.md for this project'"
   fi
 else
-  echo "[2/3] Skipping AGENTS.md generation (global install)"
+  echo "[3/4] Skipping AGENTS.md generation (global install)"
 fi
 
-# ── Step 3: Plugin patches (optional) ──────────────────────────────────────
+# ── Step 4: Plugin patches (optional) ──────────────────────────────────────
 
-if [ "$INSTALL_PLUGIN" = true ]; then
+if [ "$INSTALL_PLUGIN" = "true" ]; then
   BMAD_PLUGIN="${OPENCLAW_BMAD_PLUGIN:-$HOME/.openclaw/workspace/bmad/openclaw}"
 
   if [ ! -f "$BMAD_PLUGIN/src/index.ts" ]; then
-    echo "[3/3] WARNING: OpenClaw plugin not found at $BMAD_PLUGIN"
+    echo "[4/4] WARNING: OpenClaw plugin not found at $BMAD_PLUGIN"
     echo "  Skipping plugin patches. Set OPENCLAW_BMAD_PLUGIN if needed."
   else
-    echo "[3/3] Patching OpenClaw plugin at $BMAD_PLUGIN..."
+    echo "[4/4] Patching OpenClaw plugin at $BMAD_PLUGIN..."
 
     # Backup originals
     BACKUP_DIR="$BMAD_PLUGIN/.team-skills-backup"
@@ -127,7 +145,7 @@ if [ "$INSTALL_PLUGIN" = true ]; then
     echo "  Backups at: $BACKUP_DIR"
   fi
 else
-  echo "[3/3] Plugin patches skipped (use --plugin to enable)"
+  echo "[4/4] Plugin patches skipped (use --plugin to enable)"
 fi
 
 echo ""

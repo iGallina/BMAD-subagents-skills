@@ -38,8 +38,27 @@ Scan these files to identify technologies:
 - `playwright.config.*` → Playwright
 - `terraform.tf` → Terraform
 
-**Architecture doc (if exists):**
-- `_bmad-output/planning-artifacts/architecture.md` — parse ONLY structured tables (| Layer | Tool |), ignore prose mentions of tech.
+**BMAD output artifacts (if `_bmad-output/` exists, scan recursively):**
+
+Priority 1 — Structured tables (highest confidence):
+- `_bmad-output/planning-artifacts/architecture.md` — parse structured tables (| Layer | Tool |) for definitive tech stack
+- `_bmad-output/planning-artifacts/prd.md` — parse "Tech Stack", "Technical Requirements", "Integrations" sections
+
+Priority 2 — Planning docs:
+- `_bmad-output/planning-artifacts/*.md` — scan all other planning docs for structured tables and tech-related headers
+
+Priority 3 — Implementation artifacts:
+- `_bmad-output/implementation-artifacts/*.md` — extract technologies from code blocks (language tags), import statements, and framework-specific patterns in story specs
+
+Priority 4 — Test & other artifacts:
+- `_bmad-output/test-artifacts/*.md` — detect testing frameworks (pytest, playwright, jest, vitest, cypress, etc.)
+- `_bmad-output/brainstorming/*.md` — tech decisions in structured format only
+
+**Scanning rules for _bmad-output:**
+- Structured tables and explicit tech headers are high-confidence signals
+- Code blocks with language tags (```python, ```typescript, etc.) are medium-confidence
+- Ignore casual prose mentions — "we considered React" does NOT mean React is used
+- Deduplicate across all sources — each technology should appear once in the final output
 
 ### Step 2: Match Subagents
 
@@ -142,6 +161,7 @@ Print a summary of what was detected and recommended.
 
 - Only recommend subagents for technologies **actually used** in the project
 - Do NOT recommend agents for technologies merely mentioned in prose or future plans
-- If architecture doc exists, prefer its structured table data over filesystem scan
+- If `_bmad-output/` exists, prefer its structured data over filesystem scan (architecture tables > PRD > implementation artifacts > test artifacts)
+- Scan ALL subdirectories in `_bmad-output/` recursively
 - Omit empty sections (e.g., if no Quality subagents matched, skip that section)
 - Keep Usage Notes practical and specific to the project

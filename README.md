@@ -54,32 +54,30 @@ This overlay adds **team awareness** to the BMAD workflow:
 
 - [BMAD Method](https://github.com/bmad-code-org/BMAD-METHOD) v6.2+ installed (`npx bmad-method install`)
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code)
-- Subagents from [awesome-claude-code-subagents](https://github.com/VoltAgent/awesome-claude-code-subagents) (optional but recommended for full matching)
 
-### Install to a project
+### Install globally (recommended)
 
 ```bash
-# Clone this repo
 git clone https://github.com/iGallina/BMAD-subagents-skills.git
-
-# Install skill to your project
 cd BMAD-subagents-skills
-./scripts/install.sh /path/to/your/project
-```
-
-This installs the `generate-team` skill into your project's `.claude/skills/` alongside your existing BMAD skills.
-
-### Install globally (all projects)
-
-```bash
 ./scripts/install.sh global
 ```
 
-Installs to `~/.claude/skills/generate-team/` — available in every Claude Code session.
+This installs everything in one step:
+- **144 subagents** to `~/.claude/agents/` — immediately available in all projects
+- **generate-team skill** to `~/.claude/skills/generate-team/`
+
+### Install to a specific project
+
+```bash
+./scripts/install.sh /path/to/your/project
+```
+
+Installs subagents and skill scoped to that project's `.claude/` directory.
 
 ### For OpenClaw users (optional)
 
-If you use the OpenClaw MCP plugin, add `--plugin` to also patch the plugin for automatic prompt injection:
+Add `--plugin` to also patch the OpenClaw MCP plugin for automatic prompt injection:
 
 ```bash
 ./scripts/install.sh /path/to/your/project --plugin
@@ -89,6 +87,15 @@ This enables:
 - `bmad_generate_team` MCP tool
 - Auto-injection of team recommendations into spawned agent prompts
 - Auto-regeneration of AGENTS.md after architecture/PRD workflows
+
+### Updating subagents
+
+To pull the latest subagent definitions from upstream:
+
+```bash
+./scripts/fetch-agents.sh
+./scripts/install.sh global   # re-install with updated agents
+```
 
 ---
 
@@ -130,7 +137,7 @@ Scans project files in order of priority:
 
 | Source | What it detects |
 |--------|----------------|
-| `_bmad-output/planning-artifacts/architecture.md` | Structured table data from architecture decisions |
+| `_bmad-output/**/*.md` | Full scan of all BMAD artifacts — architecture tables (highest priority), PRD tech requirements, implementation story specs, test frameworks |
 | `package.json` | React, Vue, Next.js, Express, TypeScript, Playwright, etc. |
 | `pyproject.toml` / `requirements.txt` | Python, FastAPI, Django, pytest, Supabase, etc. |
 | `Cargo.toml` | Rust |
@@ -138,7 +145,7 @@ Scans project files in order of priority:
 | `Gemfile` | Ruby/Rails |
 | File/dir presence | Docker, Supabase, GitHub Actions, Playwright, Terraform |
 
-Architecture docs are parsed for **structured tables only** — prose mentions like "we considered React but chose Vue" don't produce false positives.
+BMAD artifacts are scanned with priority weighting — architecture tables and PRD tech sections have highest confidence, while implementation stories and test specs provide supporting signals. Prose mentions like "we considered React but chose Vue" don't produce false positives.
 
 ### Subagent Matching
 
@@ -190,6 +197,7 @@ AGENTS.md is automatically regenerated after these workflows complete:
 
 ```
 BMAD-subagents-skills/
+├── agents/                           # 144 bundled subagent definitions (.md)
 ├── plugin/
 │   ├── new/src/                     # All source files (new + modified)
 │   │   ├── lib/team-resolver.ts     # Core: tech detection + subagent matching
@@ -206,7 +214,8 @@ BMAD-subagents-skills/
 │   └── references/
 │       └── subagent-catalog.md      # Full catalog of 131 subagents
 ├── scripts/
-│   ├── install.sh                   # Installer (skill-only or skill+plugin)
+│   ├── install.sh                   # Installer (agents + skill + optional plugin)
+│   ├── fetch-agents.sh              # Update bundled agents from upstream
 │   └── uninstall.sh                 # Revert plugin changes
 └── README.md
 ```
