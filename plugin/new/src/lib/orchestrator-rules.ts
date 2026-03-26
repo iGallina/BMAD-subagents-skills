@@ -35,6 +35,9 @@ You are now executing a BMad workflow. Follow these rules EXACTLY.
 - When AGENTS.md lists recommended subagents for your role, prefer spawning those for specialized tasks
 - When AGENTS.md lists available skills, invoke them when the task matches
 - If no AGENTS.md exists, proceed normally without subagent delegation
+- **Before starting work**, check for pending Beads handoffs tagged for your role via \`/beads-handoff\`
+- **When you discover work outside your specialty**, use \`/beads-handoff\` to create a handoff for the appropriate subagent
+- **Workflow gating is enforced by Beads** — \`bd ready\` shows only unblocked workflows; do not bypass
 `;
 
 export const YOLO_MODE_RULES = `### YOLO Mode Active

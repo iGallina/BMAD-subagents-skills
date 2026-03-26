@@ -54,6 +54,8 @@ This overlay adds **team awareness** to the BMAD workflow:
 
 - [BMAD Method](https://github.com/bmad-code-org/BMAD-METHOD) v6.2+ installed (`npx bmad-method install`)
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code)
+- [Dolt](https://docs.dolthub.com/introduction/installation) — version-controlled SQL database (auto-installed via Homebrew)
+- [Beads](https://github.com/steveyegge/beads) (`bd` CLI) — task graph for workflow gating + agent handoffs (auto-installed)
 
 ### Install globally (recommended)
 
@@ -64,8 +66,10 @@ cd BMAD-subagents-skills
 ```
 
 This installs everything in one step:
+- **Dolt + Beads CLI** — auto-installed if not present
 - **144 subagents** to `~/.claude/agents/` — immediately available in all projects
 - **generate-team skill** to `~/.claude/skills/generate-team/`
+- **beads-handoff skill** to `~/.claude/skills/beads-handoff/`
 
 ### Install to a specific project
 
@@ -191,6 +195,39 @@ AGENTS.md is automatically regenerated after these workflows complete:
 - `technical-research`
 - `document-project`
 
+### Beads Integration — Workflow Gating & Agent Handoffs
+
+Powered by [Beads](https://github.com/steveyegge/beads) (`bd` CLI), the workflow state system uses a persistent dependency graph backed by [Dolt](https://docs.dolthub.com/) (a version-controlled SQL database).
+
+**Beads replaces `state.json`** as the single source of truth for workflow state:
+
+| Concept | How it maps to Beads |
+|---------|---------------------|
+| Workflow prerequisites | `bd dep add` blocking dependencies |
+| Phase gating | `bd ready --label workflow` returns only unblocked workflows |
+| Active workflow | Bead with status `in_progress` |
+| Completed workflows | Closed beads |
+
+**Cross-agent handoffs** — when an agent discovers work outside its specialty:
+
+```
+/beads-handoff
+```
+
+This creates a bead tagged with the target subagent (e.g., `agent:security-engineer`). The next agent to run will see pending handoffs in AGENTS.md and can claim them.
+
+**Workflow dependency graph** — seeded automatically by `bmad_init_project`:
+
+```
+create-product-brief (analysis, no blockers)
+  └── blocks: create-prd (planning)
+        ├── blocks: create-architecture (solutioning)
+        │     └── blocks: create-epics-and-stories
+        │           └── blocks: sprint-planning (implementation)
+        ├── blocks: validate-prd
+        └── blocks: create-ux-design
+```
+
 ---
 
 ## Project Structure
@@ -200,17 +237,20 @@ BMAD-subagents-skills/
 ├── agents/                           # 144 bundled subagent definitions (.md)
 ├── plugin/
 │   ├── new/src/                     # All source files (new + modified)
+│   │   ├── lib/beads.ts             # Beads CLI wrapper (bd commands)
+│   │   ├── lib/state.ts             # Beads-backed state (replaces state.json)
 │   │   ├── lib/team-resolver.ts     # Core: tech detection + subagent matching
+│   │   ├── lib/orchestrator-rules.ts    # Modified: team + beads awareness rules
 │   │   ├── tools/bmad-generate-team.ts  # MCP tool wrapper
 │   │   ├── tools/bmad-start-workflow.ts # Modified: team section injection
-│   │   ├── tools/bmad-init-project.ts   # Modified: initial AGENTS.md generation
+│   │   ├── tools/bmad-init-project.ts   # Modified: beads init + AGENTS.md
 │   │   ├── tools/bmad-complete-workflow.ts # Modified: auto-regeneration
-│   │   ├── lib/orchestrator-rules.ts    # Modified: team awareness rules
 │   │   ├── index.ts                     # Modified: registers new tool
-│   │   └── __tests__/team-resolver.test.ts  # 36 tests
+│   │   └── __tests__/                   # 120 tests (84 beads + 36 team)
 │   └── patches/                     # Diffs for patching existing installs
 ├── skill/
 │   ├── SKILL.md                     # generate-team Claude Code skill
+│   ├── beads-handoff/SKILL.md       # beads-handoff skill (agent task handoffs)
 │   └── references/
 │       └── subagent-catalog.md      # Full catalog of 131 subagents
 ├── scripts/
@@ -228,10 +268,14 @@ BMAD-subagents-skills/
 | Claude Code | Latest |
 | OpenClaw plugin (optional) | v0.1.0+ |
 | Node.js / Bun | 20+ |
+| Dolt | Latest |
+| Beads (`bd`) | v0.60+ |
 
 ## Related Projects
 
 - [BMAD-METHOD](https://github.com/bmad-code-org/BMAD-METHOD) — The core BMAD framework
+- [Beads](https://github.com/steveyegge/beads) — Distributed graph issue tracker for AI agents
+- [bmad-withbeads](https://github.com/ozenalp22/bmad-withbeads) — Original beads + BMAD integration (inspiration)
 - [awesome-claude-code-subagents](https://github.com/VoltAgent/awesome-claude-code-subagents) — 131 specialized subagents
 - [awesome-agent-skills](https://github.com/VoltAgent/awesome-agent-skills) — Reusable agent skills
 

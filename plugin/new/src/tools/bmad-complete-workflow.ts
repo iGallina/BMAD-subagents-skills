@@ -9,7 +9,7 @@ import { join } from "node:path";
 import { readState, writeState } from "../lib/state.ts";
 import { getAvailableWorkflows, getWorkflow } from "../lib/workflow-registry.ts";
 import { generateTeamFile } from "../lib/team-resolver.ts";
-import type { BmadPhase, ToolResult } from "../types.ts";
+import type { ToolResult } from "../types.ts";
 
 export const name = "bmad_complete_workflow";
 export const description =
@@ -20,14 +20,6 @@ export const parameters = Type.Object({
     description: "Absolute path to the project root directory",
   }),
 });
-
-/** Phase progression order */
-const PHASE_ORDER: BmadPhase[] = [
-  "analysis",
-  "planning",
-  "solutioning",
-  "implementation",
-];
 
 /** Workflows that produce architecture/requirements artifacts worth regenerating AGENTS.md for */
 const TEAM_TRIGGER_WORKFLOWS = [
@@ -74,14 +66,8 @@ export async function execute(
   // Clear active
   state.activeWorkflow = null;
 
-  // Advance phase if all workflows in current phase are done
-  if (workflowDef) {
-    const currentPhaseIdx = PHASE_ORDER.indexOf(state.currentPhase);
-    const workflowPhaseIdx = PHASE_ORDER.indexOf(workflowDef.phase);
-    if (workflowPhaseIdx > currentPhaseIdx) {
-      state.currentPhase = workflowDef.phase;
-    }
-  }
+  // Phase is now derived automatically by readState() from the beads
+  // dependency graph — no manual index comparison needed.
 
   await writeState(params.projectPath, state);
 

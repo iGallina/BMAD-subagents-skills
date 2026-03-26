@@ -8,6 +8,7 @@ import { mkdir, access, symlink, readFile, writeFile, lstat } from "node:fs/prom
 import { join } from "node:path";
 import { createInitialState, writeState, readState, bmadDir } from "../lib/state.ts";
 import { generateTeamFile } from "../lib/team-resolver.ts";
+import { initBeads, createBead, addDep, isBeadsAvailable } from "../lib/beads.ts";
 import type { ToolResult } from "../types.ts";
 
 export const name = "bmad_init_project";
@@ -83,7 +84,52 @@ product_knowledge: "${join(projectPath, "docs")}"
   // Write config to _bmad/ (not inside the symlinked bmm/ — that's read-only)
   await writeFile(join(bmad, "config.yaml"), configContent, "utf-8");
 
-  // Create state
+  // Initialize Beads and seed workflow dependency graph
+  let beadsInitialized = false;
+  if (await isBeadsAvailable()) {
+    try {
+      await initBeads(projectPath);
+
+      // Import workflow registry to seed beads
+      const { WORKFLOW_REGISTRY } = await import("../lib/workflow-registry.ts");
+
+      // Create project root bead
+      await createBead(projectPath, {
+        title: `Project: ${projectName}`,
+        labels: ["project"],
+      });
+
+      // Create workflow beads with phase labels
+      const beadIdMap = new Map<string, string>();
+      for (const wf of WORKFLOW_REGISTRY) {
+        const beadId = await createBead(projectPath, {
+          title: wf.id,
+          labels: ["workflow", `phase:${wf.phase}`],
+          desc: wf.description,
+        });
+        beadIdMap.set(wf.id, beadId);
+      }
+
+      // Wire up dependency graph from requires[]
+      for (const wf of WORKFLOW_REGISTRY) {
+        const beadId = beadIdMap.get(wf.id);
+        if (!beadId) continue;
+        for (const reqId of wf.requires ?? []) {
+          const reqBeadId = beadIdMap.get(reqId);
+          if (reqBeadId) {
+            await addDep(projectPath, beadId, reqBeadId);
+          }
+        }
+      }
+
+      beadsInitialized = true;
+    } catch (e) {
+      // Beads init is non-blocking for now, but warn
+      console.error("Beads initialization failed:", e);
+    }
+  }
+
+  // Create state (uses beads as backend if initialized)
   const state = createInitialState(projectPath, projectName);
   await writeState(projectPath, state);
 
@@ -116,7 +162,7 @@ product_knowledge: "${join(projectPath, "docs")}"
   return text(
     `✅ BMad project "${projectName}" initialized.\n\n` +
       `**Created:**\n` +
-      `- \`_bmad/state.json\` — project state tracking\n` +
+      (beadsInitialized ? `- \`.beads/\` — Beads task graph (workflow gating + handoffs)\n` : "") +
       `- \`_bmad/config.yaml\` — project configuration\n` +
       `- \`_bmad/core/\` → symlink to BMad core module\n` +
       `- \`_bmad/bmm/\` → symlink to BMad method module\n` +

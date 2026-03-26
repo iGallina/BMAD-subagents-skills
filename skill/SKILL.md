@@ -92,6 +92,23 @@ Use the catalog in `references/subagent-catalog.md` to match detected technologi
 - **Quality & Review**: quality-security category agents (test-automator, code-reviewer, qa-expert, etc.)
 - **Architecture & Planning**: api-designer, cloud-architect, microservices-architect, database-optimizer, platform-engineer
 
+### Step 2b: Detect Beads Handoffs
+
+Check if `.beads/` directory exists at project root AND `bd` CLI is available:
+
+```bash
+test -d .beads && command -v bd >/dev/null 2>&1
+```
+
+If both conditions are true, query pending handoffs:
+
+```bash
+bd ready --label handoff --json 2>/dev/null
+```
+
+Parse the result to extract: bead ID, title, and `agent:*` labels.
+If `.beads/` doesn't exist or `bd` isn't available, skip this step entirely.
+
 ### Step 3: Match Skills
 
 Always include:
@@ -144,6 +161,14 @@ Write to `{project-root}/AGENTS.md` using this template:
 | Skill | When to Use |
 |-------|------------|
 | {name} | {description} |
+
+## Task Handoffs (Beads)
+
+{count} pending. Use `/beads-handoff` to manage.
+
+| Bead | For Agent | Title |
+|------|-----------|-------|
+| {id} | {agent-tag} | {title} |
 
 ## Usage Notes
 

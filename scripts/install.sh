@@ -39,6 +39,42 @@ TARGET_PROJECT="${TARGET_PROJECT:-$(pwd)}"
 echo "=== BMAD Team-Aware Installer ==="
 echo ""
 
+# ── Step 0: Provision Beads CLI (Dolt + bd) ──────────────────────────────
+
+echo "[0/4] Checking Beads infrastructure..."
+
+if command -v dolt &>/dev/null; then
+  echo "  Dolt already installed: $(dolt version 2>/dev/null | head -1)"
+else
+  echo "  Installing Dolt (version-controlled SQL database)..."
+  if command -v brew &>/dev/null; then
+    brew install dolt 2>&1 | tail -2
+  else
+    echo "  ERROR: Homebrew not found. Install Dolt manually: https://docs.dolthub.com/introduction/installation"
+    exit 1
+  fi
+fi
+
+if command -v bd &>/dev/null; then
+  echo "  Beads CLI already installed: $(bd version 2>/dev/null | head -1)"
+else
+  echo "  Installing Beads CLI..."
+  if command -v npm &>/dev/null; then
+    npm install -g @beads/bd 2>&1 | tail -2
+  elif command -v go &>/dev/null; then
+    go install github.com/steveyegge/beads/cmd/bd@latest 2>&1 | tail -2
+  else
+    echo "  ERROR: Neither npm nor go found. Install bd manually: https://github.com/steveyegge/beads"
+    exit 1
+  fi
+  if ! command -v bd &>/dev/null; then
+    echo "  ERROR: Failed to install bd CLI."
+    exit 1
+  fi
+fi
+
+echo ""
+
 # ── Step 1: Install skill ─────────────────────────────────────────────────
 
 if [ "$TARGET_PROJECT" = "global" ]; then
@@ -54,7 +90,13 @@ fi
 mkdir -p "$SKILL_DIR/references"
 cp "$PROJECT_DIR/skill/SKILL.md" "$SKILL_DIR/"
 cp "$PROJECT_DIR/skill/references/subagent-catalog.md" "$SKILL_DIR/references/"
-echo "  Installed at: $SKILL_DIR"
+echo "  Installed generate-team at: $SKILL_DIR"
+
+# Install beads-handoff skill alongside generate-team
+BEADS_SKILL_DIR="${SKILL_DIR%generate-team}beads-handoff"
+mkdir -p "$BEADS_SKILL_DIR"
+cp "$PROJECT_DIR/skill/beads-handoff/SKILL.md" "$BEADS_SKILL_DIR/"
+echo "  Installed beads-handoff at: $BEADS_SKILL_DIR"
 
 # ── Step 2: Install subagents ──────────────────────────────────────────────
 
@@ -106,7 +148,7 @@ if [ "$INSTALL_PLUGIN" = "true" ]; then
 
     for f in src/index.ts src/tools/bmad-start-workflow.ts src/tools/bmad-init-project.ts \
              src/tools/bmad-complete-workflow.ts src/lib/orchestrator-rules.ts \
-             src/tools/bmad-load-step.ts; do
+             src/lib/state.ts src/tools/bmad-load-step.ts; do
       if [ -f "$BMAD_PLUGIN/$f" ] && [ ! -f "$BACKUP_DIR/$f" ]; then
         cp "$BMAD_PLUGIN/$f" "$BACKUP_DIR/$f"
       fi
@@ -114,8 +156,14 @@ if [ "$INSTALL_PLUGIN" = "true" ]; then
 
     # Copy new files
     cp "$PROJECT_DIR/plugin/new/src/lib/team-resolver.ts" "$BMAD_PLUGIN/src/lib/"
+    cp "$PROJECT_DIR/plugin/new/src/lib/beads.ts" "$BMAD_PLUGIN/src/lib/"
+    cp "$PROJECT_DIR/plugin/new/src/lib/state.ts" "$BMAD_PLUGIN/src/lib/"
     cp "$PROJECT_DIR/plugin/new/src/tools/bmad-generate-team.ts" "$BMAD_PLUGIN/src/tools/"
     cp "$PROJECT_DIR/plugin/new/src/__tests__/team-resolver.test.ts" "$BMAD_PLUGIN/src/__tests__/"
+    cp "$PROJECT_DIR/plugin/new/src/__tests__/beads.test.ts" "$BMAD_PLUGIN/src/__tests__/"
+    cp "$PROJECT_DIR/plugin/new/src/__tests__/init-beads.test.ts" "$BMAD_PLUGIN/src/__tests__/"
+    cp "$PROJECT_DIR/plugin/new/src/__tests__/state-beads.test.ts" "$BMAD_PLUGIN/src/__tests__/"
+    cp "$PROJECT_DIR/plugin/new/src/__tests__/beads-handoff.test.ts" "$BMAD_PLUGIN/src/__tests__/"
 
     # Apply patches (with fallback to full file copy)
     patch_file() {
@@ -153,7 +201,10 @@ echo "=== Installation complete ==="
 echo ""
 echo "Usage in Claude Code:"
 echo "  /generate-team          — Generate/update AGENTS.md"
+echo "  /beads-handoff          — Create/claim inter-agent task handoffs"
 echo "  Or ask: 'generate the AGENTS.md for this project'"
+echo ""
+echo "Beads: Workflow gating + cross-agent handoffs powered by bd CLI + Dolt"
 echo ""
 echo "To install on another project:"
 echo "  $SCRIPT_DIR/install.sh /path/to/project"
