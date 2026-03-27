@@ -12,12 +12,15 @@ cd BMAD-subagents-skills
 ./scripts/install.sh global
 ```
 
-### What you get
+### What you get — 169 tools, ready to use
 
-- **135 specialized subagents** — language experts, infra pros, security auditors, and more
-- **32 curated skills** — from Anthropic, Vercel, Expo, HashiCorp, Cloudflare, Astral, and others
-- **`/generate-team`** — a skill that scans your project and recommends the right subagents + skills
-- **`/beads-handoff`** — cross-agent task coordination powered by Beads
+| What | Count | Examples |
+|------|-------|---------|
+| **Subagents** | 135 | `python-pro`, `react-specialist`, `docker-expert`, `terraform-engineer` |
+| **Upstream Skills** | 32 | `pdf`, `next-best-practices`, `ruff`, `webapp-testing`, `aws-cdk` |
+| **Custom Skills** | 2 | `/generate-team`, `/beads-handoff` |
+
+All **169 tools** are installed in one step and auto-recommended based on your project's tech stack.
 
 ### Quick start (greenfield project)
 
