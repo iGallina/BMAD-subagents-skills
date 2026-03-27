@@ -4,13 +4,17 @@
 
 ## TL;DR
 
-### Install (one time)
+### Install + set up a project (one command)
 
 ```bash
 git clone https://github.com/iGallina/BMAD-subagents-skills.git
 cd BMAD-subagents-skills
-./scripts/install.sh global
+./scripts/setup.sh ~/my-project      # installs BMAD + 169 tools + Beads
 ```
+
+The wizard handles everything: checks prerequisites, installs BMAD Method (if not present), installs 169 tools, and sets up Beads.
+
+For tools only (no project): `./scripts/setup.sh global`
 
 ### What you get — 169 tools, ready to use
 
@@ -22,16 +26,9 @@ cd BMAD-subagents-skills
 
 All **169 tools** are installed in one step and auto-recommended based on your project's tech stack.
 
-### Quick start (greenfield project)
+### Quick start (greenfield)
 
-**In your terminal** — set up the project:
-
-```bash
-mkdir my-project && cd my-project
-npx bmad-method install              # install BMAD Method (interactive wizard)
-```
-
-**In Claude Code** — start building:
+After running `setup.sh`, open Claude Code in your project:
 
 ```
 /generate-team                       # scan tech stack → creates AGENTS.md
@@ -44,13 +41,11 @@ After `/generate-team`, every BMAD agent that spawns will know which subagents t
 
 ### Quick start (existing project)
 
-**In Claude Code:**
-
-```
-/generate-team                       # scan your project → creates AGENTS.md
+```bash
+./scripts/setup.sh /path/to/existing-project   # detects BMAD, installs tools
 ```
 
-That's it. Agents now know your team and available skills.
+Then in Claude Code: `/generate-team` — that's it.
 
 ---
 
@@ -116,33 +111,39 @@ This overlay adds **team and skill awareness** to the BMAD workflow:
 
 ### Prerequisites
 
-- [BMAD Method](https://github.com/bmad-code-org/BMAD-METHOD) v6.2+ installed (`npx bmad-method install`)
+- [Node.js](https://nodejs.org/) v20+ (required for BMAD Method)
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code)
-- [Dolt](https://docs.dolthub.com/introduction/installation) — version-controlled SQL database (auto-installed via Homebrew)
-- [Beads](https://github.com/steveyegge/beads) (`bd` CLI) — task graph for workflow gating + agent handoffs (auto-installed)
+- Dolt and Beads CLI are auto-installed by the setup wizard
 
-### Install globally (recommended)
+### Full setup (recommended)
 
 ```bash
 git clone https://github.com/iGallina/BMAD-subagents-skills.git
 cd BMAD-subagents-skills
-./scripts/install.sh global
+./scripts/setup.sh ~/my-project
 ```
 
-This installs everything in one step:
-- **Dolt + Beads CLI** — auto-installed if not present
-- **135 subagents** to `~/.claude/agents/` — immediately available in all projects
-- **32 upstream skills** to `~/.claude/skills/` — curated from Anthropic, Vercel, Expo, HashiCorp, Cloudflare, and more
-- **generate-team skill** to `~/.claude/skills/generate-team/`
-- **beads-handoff skill** to `~/.claude/skills/beads-handoff/`
+The `setup.sh` wizard handles everything:
+1. Checks prerequisites (Node.js, npm, git)
+2. Installs [BMAD Method](https://github.com/bmad-code-org/BMAD-METHOD) v6.2+ into your project (if not present)
+3. Installs **135 subagents** + **32 upstream skills** + **Dolt + Beads CLI**
+4. Prints next steps for Claude Code
 
-### Install to a specific project
+### Global install (tools only, no project)
+
+```bash
+./scripts/setup.sh global
+```
+
+Installs subagents and skills to `~/.claude/` — available in all projects. Does not install BMAD Method (run `npx bmad-method install` separately in each project).
+
+### Overlay-only install (BMAD already installed)
 
 ```bash
 ./scripts/install.sh /path/to/your/project
 ```
 
-Installs subagents and skills scoped to that project's `.claude/` directory.
+Skips BMAD Method — installs just the overlay (subagents, skills, beads) to an existing BMAD project.
 
 ### For OpenClaw users (optional)
 
@@ -350,7 +351,8 @@ BMAD-subagents-skills/
 │       ├── subagent-catalog.md      # Catalog of 131 subagents
 │       └── skill-catalog.md         # Catalog of 32 curated upstream skills
 ├── scripts/
-│   ├── install.sh                   # Installer (agents + skills + optional plugin)
+│   ├── setup.sh                     # Onboarding wizard (BMAD + overlay + beads)
+│   ├── install.sh                   # Overlay-only installer (subagents + skills + beads)
 │   ├── fetch-agents.sh              # Update bundled agents from upstream
 │   ├── fetch-skills.sh              # Update bundled skills from curated sources
 │   ├── skill-sources.txt            # Curated manifest of skill repos + tech keywords
