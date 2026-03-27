@@ -124,19 +124,99 @@ const TECH_SUBAGENT_MAP: Record<string, string[]> = {
 
 /** Maps technology keywords to recommended skills */
 const TECH_SKILL_MAP: Record<string, SkillMatch[]> = {
+  // ── Always recommended (BMAD workflow + general-purpose upstream) ────────
   _always: [
     { name: "bmad-story-pipeline", description: "Story implementation end-to-end" },
     { name: "bmad-epic-pipeline", description: "Full epic delivery pipeline" },
+    { name: "pdf", description: "PDF extraction, merging, splitting, form handling" },
+    { name: "docx", description: "Word document creation and editing" },
+    { name: "xlsx", description: "Excel spreadsheet operations and analysis" },
+    { name: "mcp-builder", description: "Create MCP servers for API integration" },
   ],
+
+  // ── Testing ─────────────────────────────────────────────────────────────
   testing: [
     { name: "bmad-tea-testarch-framework", description: "Test framework selection" },
     { name: "bmad-tea-testarch-test-design", description: "Test architecture design" },
+    { name: "test-driven-development", description: "TDD with RED-GREEN-REFACTOR cycle" },
+    { name: "pypict-testing", description: "Pairwise combinatorial test case design" },
   ],
   playwright: [
     { name: "bmad-tea-testarch-automate", description: "E2E test automation strategy" },
+    { name: "webapp-testing", description: "Test web apps using Playwright with screenshots" },
+    { name: "playwright-skill", description: "Browser automation with Playwright" },
   ],
+
+  // ── Frontend ────────────────────────────────────────────────────────────
   react: [
     { name: "bmad-bmm-create-ux-design", description: "UX design specification" },
+    { name: "web-artifacts-builder", description: "Build HTML artifacts with React + Tailwind" },
+    { name: "frontend-design", description: "Production-grade frontend interfaces" },
+  ],
+  nextjs: [
+    { name: "next-best-practices", description: "Next.js App Router and server component patterns" },
+    { name: "next-cache-components", description: "Next.js caching and PPR optimization" },
+  ],
+  tailwind: [
+    { name: "frontend-design", description: "Production-grade frontend interfaces" },
+  ],
+  vue: [
+    { name: "frontend-design", description: "Production-grade frontend interfaces" },
+  ],
+  angular: [
+    { name: "frontend-design", description: "Production-grade frontend interfaces" },
+  ],
+
+  // ── Mobile ──────────────────────────────────────────────────────────────
+  "react-native": [
+    { name: "expo-native-ui", description: "Build native UI with Expo Router" },
+    { name: "expo-deployment", description: "Deploy Expo apps to App Store and Play Store" },
+  ],
+
+  // ── Python ──────────────────────────────────────────────────────────────
+  python: [
+    { name: "ruff", description: "Fast Python linter and formatter" },
+    { name: "uv", description: "Python package and project manager" },
+  ],
+
+  // ── Infrastructure ──────────────────────────────────────────────────────
+  terraform: [
+    { name: "terraform-style-guide", description: "Terraform HCL style conventions" },
+    { name: "terraform-test", description: "Writing and running Terraform tests" },
+  ],
+  aws: [
+    { name: "aws-cdk", description: "AWS CDK infrastructure with TypeScript/Python" },
+    { name: "aws-serverless", description: "AWS serverless and event-driven architecture" },
+  ],
+  cloudflare: [
+    { name: "wrangler", description: "Cloudflare Workers CLI for deployment and management" },
+    { name: "web-perf", description: "Web performance analysis with Core Web Vitals" },
+  ],
+
+  // ── Data Visualization ──────────────────────────────────────────────────
+  d3: [
+    { name: "d3-visualization", description: "Interactive D3.js data visualizations" },
+  ],
+
+  // ── AI / ML ─────────────────────────────────────────────────────────────
+  openai: [
+    { name: "transformers-js", description: "Run ML models in JavaScript with Transformers.js" },
+  ],
+  pytorch: [
+    { name: "transformers-js", description: "Run ML models in JavaScript with Transformers.js" },
+  ],
+  tensorflow: [
+    { name: "transformers-js", description: "Run ML models in JavaScript with Transformers.js" },
+  ],
+
+  // ── Security ────────────────────────────────────────────────────────────
+  blockchain: [
+    { name: "audit-context-building", description: "Line-by-line code analysis for vulnerability context" },
+  ],
+
+  // ── Git ─────────────────────────────────────────────────────────────────
+  git: [
+    { name: "using-git-worktrees", description: "Isolated git worktrees for parallel work" },
   ],
 };
 
@@ -669,13 +749,28 @@ export function renderAgentsMd(rec: TeamRecommendation): string {
   }
 
   if (rec.skills.length > 0) {
-    lines.push("## Available Skills", "");
-    lines.push("| Skill | When to Use |");
-    lines.push("|-------|------------|");
-    for (const s of rec.skills) {
-      lines.push(`| ${s.name} | ${s.description} |`);
+    const bmadSkills = rec.skills.filter((s) => s.name.startsWith("bmad-"));
+    const upstreamSkills = rec.skills.filter((s) => !s.name.startsWith("bmad-"));
+
+    if (bmadSkills.length > 0) {
+      lines.push("## BMAD Workflow Skills", "");
+      lines.push("| Skill | When to Use |");
+      lines.push("|-------|------------|");
+      for (const s of bmadSkills) {
+        lines.push(`| ${s.name} | ${s.description} |`);
+      }
+      lines.push("");
     }
-    lines.push("");
+
+    if (upstreamSkills.length > 0) {
+      lines.push("## Recommended Skills", "");
+      lines.push("| Skill | When to Use |");
+      lines.push("|-------|------------|");
+      for (const s of upstreamSkills) {
+        lines.push(`| ${s.name} | ${s.description} |`);
+      }
+      lines.push("");
+    }
   }
 
   // Usage notes: generate practical guidance
@@ -766,6 +861,8 @@ export function filterTeamForRole(
 
   // Always include skills and usage notes
   if (sections.skills) parts.push(sections.skills);
+  if (sections.bmadSkills) parts.push(sections.bmadSkills);
+  if (sections.recommendedSkills) parts.push(sections.recommendedSkills);
   if (sections.usageNotes) parts.push(sections.usageNotes);
 
   return parts.join("\n\n");
@@ -791,7 +888,10 @@ function parseAgentsMdSections(content: string): Record<string, string> {
   extract("Implementation", "implementation");
   extract("Quality & Review", "quality");
   extract("Architecture & Planning", "architecture");
+  // Support both legacy "Available Skills" and new split sections
   extract("Available Skills", "skills");
+  extract("BMAD Workflow Skills", "bmadSkills");
+  extract("Recommended Skills", "recommendedSkills");
   extract("Usage Notes", "usageNotes");
 
   return sections;

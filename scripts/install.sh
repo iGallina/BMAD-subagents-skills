@@ -90,6 +90,9 @@ fi
 mkdir -p "$SKILL_DIR/references"
 cp "$PROJECT_DIR/skill/SKILL.md" "$SKILL_DIR/"
 cp "$PROJECT_DIR/skill/references/subagent-catalog.md" "$SKILL_DIR/references/"
+if [ -f "$PROJECT_DIR/skill/references/skill-catalog.md" ]; then
+  cp "$PROJECT_DIR/skill/references/skill-catalog.md" "$SKILL_DIR/references/"
+fi
 echo "  Installed generate-team at: $SKILL_DIR"
 
 # Install beads-handoff skill alongside generate-team
@@ -98,7 +101,7 @@ mkdir -p "$BEADS_SKILL_DIR"
 cp "$PROJECT_DIR/skill/beads-handoff/SKILL.md" "$BEADS_SKILL_DIR/"
 echo "  Installed beads-handoff at: $BEADS_SKILL_DIR"
 
-# ── Step 2: Install subagents ──────────────────────────────────────────────
+# ── Step 2a: Install subagents ─────────────────────────────────────────────
 
 BUNDLED_AGENTS="$PROJECT_DIR/agents"
 
@@ -114,6 +117,33 @@ if [ -d "$BUNDLED_AGENTS" ] && [ "$(ls -A "$BUNDLED_AGENTS"/*.md 2>/dev/null)" ]
 else
   echo "[2/4] WARNING: No bundled agents found at $BUNDLED_AGENTS"
   echo "  Run scripts/fetch-agents.sh first to download subagent definitions"
+fi
+
+# ── Step 2b: Install upstream skills ───────────────────────────────────────
+
+BUNDLED_SKILLS="$PROJECT_DIR/skills"
+if [ "$TARGET_PROJECT" = "global" ]; then
+  SKILLS_DEST="$HOME/.claude/skills"
+else
+  SKILLS_DEST="$TARGET_PROJECT/.claude/skills"
+fi
+
+if [ -d "$BUNDLED_SKILLS" ]; then
+  SKILL_COUNT=0
+  for skill_dir in "$BUNDLED_SKILLS"/*/; do
+    if [ -f "$skill_dir/SKILL.md" ]; then
+      skill_name="$(basename "$skill_dir")"
+      target_skill="$SKILLS_DEST/$skill_name"
+      mkdir -p "$target_skill"
+      cp -r "$skill_dir"* "$target_skill/"
+      SKILL_COUNT=$((SKILL_COUNT + 1))
+    fi
+  done
+  if [ "$SKILL_COUNT" -gt 0 ]; then
+    echo "  Installed $SKILL_COUNT upstream skills to: $SKILLS_DEST"
+  fi
+else
+  echo "  No bundled skills found. Run scripts/fetch-skills.sh first."
 fi
 
 # ── Step 3: Generate initial AGENTS.md ─────────────────────────────────────

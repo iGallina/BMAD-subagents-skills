@@ -1,0 +1,74 @@
+# BMAD Skill Sources — Curated manifest of upstream skills
+#
+# FORMAT: repo_url | skill_path_in_repo | skill_slug | tech_keywords (comma-separated)
+#
+# - Lines starting with # are comments
+# - skill_path_in_repo: path to the directory containing SKILL.md
+# - skill_slug: name used for the skills/{slug}/ directory
+# - tech_keywords: comma-separated keywords that trigger this skill recommendation
+#   Use "_always" for skills recommended regardless of tech stack
+#
+# To add a new skill: append a line, then run ./scripts/fetch-skills.sh
+#
+# Sources researched:
+#   - https://github.com/VoltAgent/awesome-agent-skills
+#   - https://awesome-skills.com/
+#   - https://github.com/travisvn/awesome-claude-skills
+#   - https://github.com/ComposioHQ/awesome-claude-skills
+#   - https://cultofclaude.com/skills/
+
+# ── Anthropic Official ──────────────────────────────────────────────────────
+https://github.com/anthropics/skills | skills/pdf | pdf | _always
+https://github.com/anthropics/skills | skills/docx | docx | _always
+https://github.com/anthropics/skills | skills/xlsx | xlsx | _always
+https://github.com/anthropics/skills | skills/pptx | pptx | _always
+https://github.com/anthropics/skills | skills/mcp-builder | mcp-builder | _always
+https://github.com/anthropics/skills | skills/webapp-testing | webapp-testing | playwright,testing
+https://github.com/anthropics/skills | skills/web-artifacts-builder | web-artifacts-builder | react,tailwind
+https://github.com/anthropics/skills | skills/frontend-design | frontend-design | react,vue,angular,tailwind
+
+# ── React / Next.js (Vercel Labs) ───────────────────────────────────────────
+https://github.com/vercel-labs/next-skills | skills/next-best-practices | next-best-practices | nextjs
+https://github.com/vercel-labs/next-skills | skills/next-cache-components | next-cache-components | nextjs
+https://github.com/vercel-labs/next-skills | skills/next-upgrade | next-upgrade | nextjs
+
+# ── Expo / React Native ─────────────────────────────────────────────────────
+https://github.com/expo/skills | plugins/expo/skills/building-native-ui | expo-native-ui | react-native,expo
+https://github.com/expo/skills | plugins/expo/skills/expo-deployment | expo-deployment | react-native,expo
+https://github.com/expo/skills | plugins/expo/skills/expo-cicd-workflows | expo-cicd | react-native,expo
+https://github.com/expo/skills | plugins/expo/skills/expo-tailwind-setup | expo-tailwind | react-native,tailwind
+
+# ── Testing & Quality ────────────────────────────────────────────────────────
+https://github.com/obra/superpowers | skills/test-driven-development | test-driven-development | testing
+https://github.com/lackeyjb/playwright-skill | skills/playwright-skill | playwright-skill | playwright
+https://github.com/omkamal/pypict-claude-skill | . | pypict-testing | testing,python
+
+# ── WordPress ────────────────────────────────────────────────────────────────
+# Note: Add WordPress skill repos here when available (e.g., wp-plugin-development, wp-rest-api)
+
+# ── Infrastructure & Cloud ───────────────────────────────────────────────────
+https://github.com/hashicorp/agent-skills | terraform/code-generation/skills/terraform-style-guide | terraform-style-guide | terraform
+https://github.com/hashicorp/agent-skills | terraform/code-generation/skills/terraform-test | terraform-test | terraform
+https://github.com/hashicorp/agent-skills | terraform/module-generation/skills/refactor-module | terraform-refactor-module | terraform
+https://github.com/zxkane/aws-skills | plugins/aws-cdk/skills/aws-cdk-development | aws-cdk | aws
+https://github.com/zxkane/aws-skills | plugins/serverless-eda/skills/aws-serverless-eda | aws-serverless | aws
+https://github.com/cloudflare/skills | skills/wrangler | wrangler | cloudflare
+https://github.com/cloudflare/skills | skills/web-perf | web-perf | cloudflare
+
+# ── Python Tooling ───────────────────────────────────────────────────────────
+https://github.com/astral-sh/claude-code-plugins | plugins/astral/skills/ruff | ruff | python
+https://github.com/astral-sh/claude-code-plugins | plugins/astral/skills/uv | uv | python
+https://github.com/astral-sh/claude-code-plugins | plugins/astral/skills/ty | ty | python
+
+# ── Security ─────────────────────────────────────────────────────────────────
+# trail of bits building-secure-contracts: SKILL.md not at expected path, skipped for now
+https://github.com/trailofbits/skills | plugins/audit-context-building/skills/audit-context-building | audit-context-building | security
+
+# ── Git Workflow ─────────────────────────────────────────────────────────────
+https://github.com/obra/superpowers | skills/using-git-worktrees | using-git-worktrees | git
+
+# ── D3.js / Data Visualization ──────────────────────────────────────────────
+https://github.com/chrisvoncsefalvay/claude-d3js-skill | . | d3-visualization | d3,javascript
+
+# ── Hugging Face / AI ────────────────────────────────────────────────────────
+https://github.com/huggingface/skills | skills/transformers-js | transformers-js | tensorflow,pytorch,openai

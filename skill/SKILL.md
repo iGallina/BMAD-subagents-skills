@@ -111,14 +111,38 @@ If `.beads/` doesn't exist or `bd` isn't available, skip this step entirely.
 
 ### Step 3: Match Skills
 
-Always include:
+**BMAD workflow skills (always include):**
 - `bmad-story-pipeline` — Story implementation end-to-end
 - `bmad-epic-pipeline` — Full epic delivery pipeline
 
-Add based on tech:
+**BMAD skills based on tech:**
 - Testing detected → `bmad-tea-testarch-framework`, `bmad-tea-testarch-test-design`
 - Playwright detected → `bmad-tea-testarch-automate`
 - React/frontend detected → `bmad-bmm-create-ux-design`
+
+**Upstream utility skills (always include):**
+- `pdf` — PDF extraction, merging, splitting, form handling
+- `docx` — Word document creation and editing
+- `xlsx` — Excel spreadsheet operations and analysis
+- `mcp-builder` — Create MCP servers for API integration
+
+**Upstream skills based on tech:**
+- react → `web-artifacts-builder`, `frontend-design`
+- nextjs → `next-best-practices`, `next-cache-components`
+- playwright → `webapp-testing`, `playwright-skill`
+- testing → `test-driven-development`, `pypict-testing`
+- python → `ruff`, `uv`
+- terraform → `terraform-style-guide`, `terraform-test`
+- aws → `aws-cdk`, `aws-serverless`
+- cloudflare → `wrangler`, `web-perf`
+- react-native → `expo-native-ui`, `expo-deployment`
+- tailwind/vue/angular → `frontend-design`
+- d3 → `d3-visualization`
+- openai/pytorch/tensorflow → `transformers-js`
+- blockchain → `audit-context-building`
+- git → `using-git-worktrees`
+
+Check `references/skill-catalog.md` for the full catalog of available upstream skills.
 
 ### Step 4: Generate AGENTS.md
 
@@ -156,7 +180,13 @@ Write to `{project-root}/AGENTS.md` using this template:
 |----------|-----|
 | {name} | {reason} |
 
-## Available Skills
+## BMAD Workflow Skills
+
+| Skill | When to Use |
+|-------|------------|
+| {name} | {description} |
+
+## Recommended Skills
 
 | Skill | When to Use |
 |-------|------------|
