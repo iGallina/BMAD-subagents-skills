@@ -1,10 +1,10 @@
-# BMAD Team-Aware Agents
+# BMAD Team-Aware & Skill-Aware Agents
 
-> An overlay for [BMAD Method](https://github.com/bmad-code-org/BMAD-METHOD) that makes agents aware of available [subagents](https://github.com/VoltAgent/awesome-claude-code-subagents) when working on projects.
+> An overlay for [BMAD Method](https://github.com/bmad-code-org/BMAD-METHOD) that makes agents aware of available [subagents](https://github.com/VoltAgent/awesome-claude-code-subagents) and [skills](https://github.com/VoltAgent/awesome-agent-skills) when working on projects.
 
 ## The Problem
 
-When BMAD spawns an agent to execute a workflow (Dev implementing a story, QA writing tests, Architect designing systems), **the agent has no idea what specialized subagents are available**. A Dev agent working on a FastAPI + React project doesn't know it can delegate to `python-pro` for backend work or `react-specialist` for frontend components.
+When BMAD spawns an agent to execute a workflow (Dev implementing a story, QA writing tests, Architect designing systems), **the agent has no idea what specialized subagents or skills are available**. A Dev agent working on a FastAPI + React project doesn't know it can delegate to `python-pro` for backend work or `react-specialist` for frontend components.
 
 Meanwhile, there are **135 specialized subagents** across 10 categories available — but agents can't use what they don't know about.
 
@@ -14,7 +14,7 @@ This overlay adds **team awareness** to the BMAD workflow:
 
 1. **Scans your project** — detects technologies from `package.json`, `requirements.txt`, `pyproject.toml`, `Cargo.toml`, `Dockerfile`, architecture docs, etc.
 2. **Maps tech to subagents** — ~50 technology keywords mapped to the right specialists
-3. **Generates `AGENTS.md`** — a project-level file with recommended subagents
+3. **Generates `AGENTS.md`** — a project-level file with recommended subagents + skills
 4. **Injects into agent prompts** — when BMAD spawns a Dev/QA/Architect agent, they receive filtered recommendations based on their role
 
 ### Example: SmartAutomacao project (Python/FastAPI/Supabase/Docker)
@@ -276,8 +276,8 @@ BMAD-subagents-skills/
 - [BMAD-METHOD](https://github.com/bmad-code-org/BMAD-METHOD) — The core BMAD framework
 - [Beads](https://github.com/steveyegge/beads) — Distributed graph issue tracker for AI agents
 - [bmad-withbeads](https://github.com/ozenalp22/bmad-withbeads) — Original beads + BMAD integration (inspiration)
-- [awesome-claude-code-subagents](https://github.com/VoltAgent/awesome-claude-code-subagents) — 135 specialized subagents (upstream source for bundled agents)
-- [awesome-agent-skills](https://github.com/VoltAgent/awesome-agent-skills) — Reusable agent skills (not yet integrated — skill-awareness is planned)
+- [awesome-claude-code-subagents](https://github.com/VoltAgent/awesome-claude-code-subagents) — 131 specialized subagents
+- [awesome-agent-skills](https://github.com/VoltAgent/awesome-agent-skills) — Reusable agent skills
 
 ## License
 
