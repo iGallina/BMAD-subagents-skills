@@ -24,22 +24,33 @@ All **169 tools** are installed in one step and auto-recommended based on your p
 
 ### Quick start (greenfield project)
 
-```
-1. npx bmad-method install          # install BMAD Method in your project
-2. /generate-team                   # scan tech stack, create AGENTS.md
-3. /bmad-create-product-brief       # kick off the BMAD workflow
-4. /bmad-create-prd                 # product requirements (auto-gates via Beads)
-5. /bmad-create-architecture        # architecture doc — AGENTS.md auto-updates
+**In your terminal** — set up the project:
+
+```bash
+mkdir my-project && cd my-project
+npx bmad-method install              # install BMAD Method (interactive wizard)
 ```
 
-After step 2, every BMAD agent that spawns will know which subagents to delegate to and which skills to use — matched to your actual tech stack.
+**In Claude Code** — start building:
+
+```
+/generate-team                       # scan tech stack → creates AGENTS.md
+/bmad-create-product-brief           # kick off the BMAD workflow
+/bmad-create-prd                     # product requirements (auto-gates via Beads)
+/bmad-create-architecture            # architecture doc — AGENTS.md auto-updates
+```
+
+After `/generate-team`, every BMAD agent that spawns will know which subagents to delegate to and which skills to use — matched to your actual tech stack.
 
 ### Quick start (existing project)
 
+**In Claude Code:**
+
 ```
-1. /generate-team                   # scan your project, create AGENTS.md
-2. Start working — agents now know your team
+/generate-team                       # scan your project → creates AGENTS.md
 ```
+
+That's it. Agents now know your team and available skills.
 
 ---
 
