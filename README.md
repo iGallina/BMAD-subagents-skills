@@ -2,6 +2,44 @@
 
 > An overlay for [BMAD Method](https://github.com/bmad-code-org/BMAD-METHOD) that makes agents aware of available [subagents](https://github.com/VoltAgent/awesome-claude-code-subagents) and [skills](https://github.com/VoltAgent/awesome-agent-skills) when working on projects.
 
+## TL;DR
+
+### Install (one time)
+
+```bash
+git clone https://github.com/iGallina/BMAD-subagents-skills.git
+cd BMAD-subagents-skills
+./scripts/install.sh global
+```
+
+### What you get
+
+- **135 specialized subagents** — language experts, infra pros, security auditors, and more
+- **32 curated skills** — from Anthropic, Vercel, Expo, HashiCorp, Cloudflare, Astral, and others
+- **`/generate-team`** — a skill that scans your project and recommends the right subagents + skills
+- **`/beads-handoff`** — cross-agent task coordination powered by Beads
+
+### Quick start (greenfield project)
+
+```
+1. npx bmad-method install          # install BMAD Method in your project
+2. /generate-team                   # scan tech stack, create AGENTS.md
+3. /bmad-create-product-brief       # kick off the BMAD workflow
+4. /bmad-create-prd                 # product requirements (auto-gates via Beads)
+5. /bmad-create-architecture        # architecture doc — AGENTS.md auto-updates
+```
+
+After step 2, every BMAD agent that spawns will know which subagents to delegate to and which skills to use — matched to your actual tech stack.
+
+### Quick start (existing project)
+
+```
+1. /generate-team                   # scan your project, create AGENTS.md
+2. Start working — agents now know your team
+```
+
+---
+
 ## The Problem
 
 When BMAD spawns an agent to execute a workflow (Dev implementing a story, QA writing tests, Architect designing systems), **the agent has no idea what specialized subagents or skills are available**. A Dev agent working on a FastAPI + React project doesn't know it can delegate to `python-pro` for backend work or `react-specialist` for frontend components.
