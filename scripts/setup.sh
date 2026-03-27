@@ -95,6 +95,15 @@ check_cmd node "Node.js" "https://nodejs.org/ (v20+)" || PREREQS_OK=false
 check_cmd npm "npm" "comes with Node.js" || PREREQS_OK=false
 check_cmd git "git" "https://git-scm.com/" || PREREQS_OK=false
 
+# npx is required for BMAD Method install
+if ! command -v npx &>/dev/null; then
+  echo "  npx: NOT FOUND (required for BMAD Method)"
+  echo "    Install: comes with npm 5.2+ / Node.js 8+"
+  PREREQS_OK=false
+else
+  echo "  npx: available"
+fi
+
 if [ "$PREREQS_OK" = false ]; then
   echo ""
   echo "  ERROR: Missing prerequisites. Install them and re-run."
@@ -144,14 +153,24 @@ else
       git -C "$TARGET_PROJECT" init -q
     fi
 
-    # Run BMAD installer
-    (cd "$TARGET_PROJECT" && npx bmad-method install)
+    # Run BMAD installer (interactive — user may Ctrl+C)
+    bmad_exit=0
+    (cd "$TARGET_PROJECT" && npx bmad-method install) || bmad_exit=$?
 
     echo ""
     echo "  ─────────────────────────────────────────────"
 
-    # Verify BMAD installed
-    if [ -d "$TARGET_PROJECT/_bmad" ] || ls "$TARGET_PROJECT/.claude/skills/bmad-"* &>/dev/null 2>&1; then
+    if [ "$bmad_exit" -ne 0 ]; then
+      echo ""
+      echo "  BMAD Method installer exited with code $bmad_exit."
+      echo "  This may mean it was cancelled or failed."
+      echo ""
+      read -r -p "  Continue with overlay installation anyway? [y/N] " confirm
+      if [[ ! "$confirm" =~ ^[Yy] ]]; then
+        echo "  Aborted. Re-run setup.sh when ready."
+        exit 1
+      fi
+    elif [ -d "$TARGET_PROJECT/_bmad" ] || ls "$TARGET_PROJECT/.claude/skills/bmad-"* &>/dev/null 2>&1; then
       echo "  BMAD Method installed successfully"
     else
       echo "  WARNING: BMAD Method may not have installed correctly."

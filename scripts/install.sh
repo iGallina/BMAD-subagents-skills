@@ -49,8 +49,13 @@ else
   echo "  Installing Dolt (version-controlled SQL database)..."
   if command -v brew &>/dev/null; then
     brew install dolt 2>&1 | tail -2
+  elif command -v curl &>/dev/null; then
+    echo "  Downloading Dolt install script..."
+    curl -sL https://github.com/dolthub/dolt/releases/latest/download/install.sh | bash 2>&1 | tail -3
+  elif command -v apt-get &>/dev/null; then
+    sudo apt-get update -qq && sudo apt-get install -y -qq dolt 2>&1 | tail -2
   else
-    echo "  ERROR: Homebrew not found. Install Dolt manually: https://docs.dolthub.com/introduction/installation"
+    echo "  ERROR: Cannot auto-install Dolt. Install manually: https://docs.dolthub.com/introduction/installation"
     exit 1
   fi
 fi
