@@ -90,7 +90,7 @@ This installs everything in one step:
 ./scripts/install.sh /path/to/your/project
 ```
 
-Installs subagents and skill scoped to that project's `.claude/` directory.
+Installs subagents and skills scoped to that project's `.claude/` directory.
 
 ### For OpenClaw users (optional)
 
@@ -215,10 +215,10 @@ When `bmad_start_workflow` spawns an agent, it reads `AGENTS.md` and injects a *
 
 | Agent Role | Sees |
 |-----------|------|
-| Dev (Amelia) | Implementation + Quality + Usage Notes |
-| QA (Quinn) | Quality + Implementation |
-| Architect (Winston) | Architecture + Implementation |
-| SM (Bob) in impl phase | Implementation |
+| Dev (Amelia) | Implementation + Quality + Skills + Usage Notes |
+| QA (Quinn) | Quality + Implementation + Skills |
+| Architect (Winston) | Architecture + Implementation + Skills |
+| SM (Bob) in impl phase | Implementation + Skills |
 
 This keeps prompts focused — a Dev agent doesn't see architecture recommendations, and an Architect doesn't see testing tools.
 
